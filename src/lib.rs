@@ -14,16 +14,20 @@ impl<T> DynArray<T> {
     /// # Safety
     ///
     /// ptr has to point to an initialized array of type T and length len
+    #[inline]
     pub unsafe fn from_parts(ptr: *mut T, len: usize) -> Self {
         DynArray { ptr, len }
     }
 
+    #[inline]
     pub fn into_parts(self) -> (*mut T, usize) {
         let me = ManuallyDrop::new(self);
         (me.ptr, me.len)
     }
 
     /// allocate new uninit DynArray of size `len`
+    #[inline]
+    #[must_use]
     pub fn new_uninit(len: usize) -> DynArray<MaybeUninit<T>> {
         let layout = Layout::array::<T>(len).unwrap();
 
@@ -35,6 +39,8 @@ impl<T> DynArray<T> {
     }
 
     /// allocate new DynArray of size `len` and fill with default value
+    #[inline]
+    #[must_use]
     pub fn new(len: usize) -> Self
     where
         T: Default,
@@ -48,10 +54,12 @@ impl<T> DynArray<T> {
         dyn_array.assume_init()
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -72,6 +80,7 @@ impl<T> DynArray<T> {
 }
 
 impl<T> DynArray<MaybeUninit<T>> {
+    #[inline]
     pub fn assume_init(self) -> DynArray<T> {
         let (ptr, len) = self.into_parts();
         unsafe { DynArray::from_parts(ptr as *mut T, len) }
@@ -80,8 +89,6 @@ impl<T> DynArray<MaybeUninit<T>> {
 
 impl<T> Drop for DynArray<T> {
     fn drop(&mut self) {
-        println!("Dropping {:#?}", self.ptr);
-
         let layout = Layout::array::<T>(self.len).unwrap();
 
         unsafe {
@@ -136,36 +143,42 @@ impl<T: Clone> Clone for DynArray<T> {
 impl<T> Deref for DynArray<T> {
     type Target = [T];
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
     }
 }
 
 impl<T> DerefMut for DynArray<T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { std::slice::from_raw_parts_mut(self.ptr, self.len) }
     }
 }
 
 impl<T> AsRef<[T]> for DynArray<T> {
+    #[inline]
     fn as_ref(&self) -> &[T] {
         self
     }
 }
 
 impl<T> AsMut<[T]> for DynArray<T> {
+    #[inline]
     fn as_mut(&mut self) -> &mut [T] {
         self
     }
 }
 
 impl<T> Borrow<[T]> for DynArray<T> {
+    #[inline]
     fn borrow(&self) -> &[T] {
         &self[..]
     }
 }
 
 impl<T> BorrowMut<[T]> for DynArray<T> {
+    #[inline]
     fn borrow_mut(&mut self) -> &mut [T] {
         &mut self[..]
     }
