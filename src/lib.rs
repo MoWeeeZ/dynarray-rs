@@ -95,8 +95,8 @@ impl<T: Clone> From<&[T]> for DynArray<T> {
     fn from(slice: &[T]) -> Self {
         let mut dyn_array = Self::new_uninit(slice.len());
 
-        for i in 0..slice.len() {
-            dyn_array[i].write(slice[i].clone());
+        for (dst, val) in dyn_array.iter_mut().zip(slice) {
+            dst.write(val.clone());
         }
 
         dyn_array.assume_init()
