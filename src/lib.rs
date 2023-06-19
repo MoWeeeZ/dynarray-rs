@@ -95,10 +95,16 @@ impl<T> DynArray<MaybeUninit<T>> {
 
 impl<T> Drop for DynArray<T> {
     fn drop(&mut self) {
+        let ptr = self.ptr;
+
+        for idx in 0..self.len {
+            unsafe { drop(std::ptr::read(ptr.add(idx))) };
+        }
+
         let layout = Layout::array::<T>(self.len).unwrap();
 
         unsafe {
-            dealloc(self.ptr as *mut u8, layout);
+            dealloc(ptr as *mut u8, layout);
         }
     }
 }
@@ -265,5 +271,34 @@ mod tests {
         }
 
         println!("Loop done");
+    }
+
+    #[test]
+    fn test_drop() {
+        let mut x = 0;
+
+        struct DropTest<'a>(&'a mut i32);
+
+        impl Drop for DropTest<'_> {
+            fn drop(&mut self) {
+                *self.0 += 1;
+            }
+        }
+
+        let drop_test = DropTest(&mut x);
+
+        drop(drop_test);
+
+        assert_eq!(x, 1);
+
+        let mut drop_array = DynArray::new_uninit(1);
+
+        drop_array[0].write(DropTest(&mut x));
+
+        let drop_array = drop_array.assume_init();
+
+        drop(drop_array);
+
+        assert_eq!(x, 2);
     }
 }
