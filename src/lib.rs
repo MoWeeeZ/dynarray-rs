@@ -79,6 +79,12 @@ impl<T> DynArray<T> {
     }
 }
 
+impl<T> Default for DynArray<T> {
+    fn default() -> Self {
+        DynArray::new_uninit(0).assume_init()
+    }
+}
+
 impl<T> DynArray<MaybeUninit<T>> {
     #[inline]
     pub fn assume_init(self) -> DynArray<T> {
@@ -226,6 +232,15 @@ mod tests {
     use std::mem::MaybeUninit;
 
     use super::DynArray;
+
+    #[test]
+    fn zero_len_test() {
+        let a = DynArray::<u8>::new_uninit(0).assume_init();
+
+        assert_eq!(a.len(), 0);
+
+        drop(a);
+    }
 
     #[test]
     fn uninit_test() {
